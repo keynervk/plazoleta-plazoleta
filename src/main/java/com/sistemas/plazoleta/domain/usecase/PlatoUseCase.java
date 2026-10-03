@@ -1,6 +1,7 @@
 package com.sistemas.plazoleta.domain.usecase;
 
 import com.sistemas.plazoleta.domain.api.IPlatoServicePort;
+import com.sistemas.plazoleta.domain.exception.PlatoNoEncontradoException;
 import com.sistemas.plazoleta.domain.exception.ValidacionException;
 import com.sistemas.plazoleta.domain.model.Plato;
 import com.sistemas.plazoleta.domain.spi.IPlatoPersistencePort;
@@ -35,6 +36,35 @@ public class PlatoUseCase implements IPlatoServicePort {
 
         plato.setActivo(true);
         platoPersistencePort.guardarPlato(plato);
+    }
+
+    @Override
+    public void modificarPlato(Long idPlato, Integer nuevoPrecio, String nuevaDescripcion) {
+        if (idPlato == null) {
+            throw new ValidacionException("El id del plato es obligatorio");
+        }
+
+        Plato plato = platoPersistencePort.buscarPorId(idPlato);
+        if (plato == null) {
+            throw new PlatoNoEncontradoException("No existe un plato con ese id");
+        }
+
+        if (nuevoPrecio == null && (nuevaDescripcion == null || nuevaDescripcion.isBlank())) {
+            throw new ValidacionException("Debe enviar al menos el precio o la descripcion a modificar");
+        }
+
+        if (nuevoPrecio != null) {
+            if (nuevoPrecio <= 0) {
+                throw new ValidacionException("El precio debe ser un numero entero positivo mayor a 0");
+            }
+            plato.setPrecio(nuevoPrecio);
+        }
+
+        if (nuevaDescripcion != null && !nuevaDescripcion.isBlank()) {
+            plato.setDescripcion(nuevaDescripcion);
+        }
+
+        platoPersistencePort.actualizarPlato(plato);
     }
 
     private void validarCamposObligatorios(Plato plato) {

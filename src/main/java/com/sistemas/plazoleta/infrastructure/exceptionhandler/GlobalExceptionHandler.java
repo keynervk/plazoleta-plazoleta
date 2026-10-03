@@ -1,5 +1,6 @@
 package com.sistemas.plazoleta.infrastructure.exceptionhandler;
 
+import com.sistemas.plazoleta.domain.exception.PlatoNoEncontradoException;
 import com.sistemas.plazoleta.domain.exception.RestauranteYaExisteException;
 import com.sistemas.plazoleta.domain.exception.ValidacionException;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleYaExiste(RestauranteYaExisteException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse(409, ex.getMessage()));
+    }
+
+    @ExceptionHandler(PlatoNoEncontradoException.class)
+    public ResponseEntity<ErrorResponse> handlePlatoNoEncontrado(PlatoNoEncontradoException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(404, ex.getMessage()));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
