@@ -24,4 +24,8 @@ public class PlatoHandler {
     public void modificarPlato(Long idPlato, ModificarPlatoRequestDto dto) {
         platoServicePort.modificarPlato(idPlato, dto.precio(), dto.descripcion());
     }
+
+    public void cambiarEstado(Long idPlato, boolean activo) {
+        platoServicePort.cambiarEstado(idPlato, activo);
+    }
 }

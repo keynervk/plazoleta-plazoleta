@@ -67,6 +67,21 @@ public class PlatoUseCase implements IPlatoServicePort {
         platoPersistencePort.actualizarPlato(plato);
     }
 
+    @Override
+    public void cambiarEstado(Long idPlato, boolean activo) {
+        if (idPlato == null) {
+            throw new ValidacionException("El id del plato es obligatorio");
+        }
+
+        Plato plato = platoPersistencePort.buscarPorId(idPlato);
+        if (plato == null) {
+            throw new PlatoNoEncontradoException("No existe un plato con ese id");
+        }
+
+        plato.setActivo(activo);
+        platoPersistencePort.actualizarPlato(plato);
+    }
+
     private void validarCamposObligatorios(Plato plato) {
         if (plato == null) {
             throw new ValidacionException("El plato es obligatorio");
