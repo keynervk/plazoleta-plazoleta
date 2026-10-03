@@ -194,4 +194,40 @@ class PlatoUseCaseTest {
         assertThrows(ValidacionException.class,
                 () -> platoUseCase.modificarPlato(null, 20000, "Algo"));
     }
+
+    // ---------- cambiarEstado ----------
+
+    @org.junit.jupiter.api.Test
+    void cambiarEstado_deshabilitarPlatoExistente_actualiza() {
+        Plato existente = platoExistente();
+        when(platoPersistencePort.buscarPorId(10L)).thenReturn(existente);
+
+        platoUseCase.cambiarEstado(10L, false);
+
+        org.mockito.ArgumentCaptor<Plato> captor = org.mockito.ArgumentCaptor.forClass(Plato.class);
+        verify(platoPersistencePort).actualizarPlato(captor.capture());
+        org.junit.jupiter.api.Assertions.assertFalse(captor.getValue().isActivo());
+    }
+
+    @org.junit.jupiter.api.Test
+    void cambiarEstado_habilitarPlatoExistente_actualiza() {
+        Plato existente = platoExistente();
+        existente.setActivo(false);
+        when(platoPersistencePort.buscarPorId(10L)).thenReturn(existente);
+
+        platoUseCase.cambiarEstado(10L, true);
+
+        org.mockito.ArgumentCaptor<Plato> captor = org.mockito.ArgumentCaptor.forClass(Plato.class);
+        verify(platoPersistencePort).actualizarPlato(captor.capture());
+        assertTrue(captor.getValue().isActivo());
+    }
+
+    @org.junit.jupiter.api.Test
+    void cambiarEstado_siElPlatoNoExiste_lanzaPlatoNoEncontradoException() {
+        when(platoPersistencePort.buscarPorId(99L)).thenReturn(null);
+
+        assertThrows(PlatoNoEncontradoException.class,
+                () -> platoUseCase.cambiarEstado(99L, false));
+        verify(platoPersistencePort, never()).actualizarPlato(any());
+    }
 }

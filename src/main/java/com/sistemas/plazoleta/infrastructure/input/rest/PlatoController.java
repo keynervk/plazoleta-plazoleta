@@ -44,4 +44,22 @@ public class PlatoController {
         platoHandler.modificarPlato(id, dto);
         return ResponseEntity.ok().build();
     }
+
+    @Operation(summary = "Habilitar un plato (requiere rol PROPIETARIO, dueno del restaurante)")
+    @ApiResponse(responseCode = "200", description = "Plato habilitado")
+    @ApiResponse(responseCode = "404", description = "El plato no existe")
+    @PatchMapping("/{id}/habilitar")
+    public ResponseEntity<Void> habilitarPlato(@PathVariable Long id) {
+        platoHandler.cambiarEstado(id, true);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Deshabilitar un plato (requiere rol PROPIETARIO, dueno del restaurante)")
+    @ApiResponse(responseCode = "200", description = "Plato deshabilitado")
+    @ApiResponse(responseCode = "404", description = "El plato no existe")
+    @PatchMapping("/{id}/deshabilitar")
+    public ResponseEntity<Void> deshabilitarPlato(@PathVariable Long id) {
+        platoHandler.cambiarEstado(id, false);
+        return ResponseEntity.ok().build();
+    }
 }
