@@ -6,6 +6,8 @@ import com.sistemas.plazoleta.infrastructure.output.jpa.mapper.RestauranteEntity
 import com.sistemas.plazoleta.infrastructure.output.jpa.repository.IRestauranteRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class RestauranteJpaAdapter implements IRestaurantePersistencePort {
 
@@ -30,5 +32,10 @@ public class RestauranteJpaAdapter implements IRestaurantePersistencePort {
     @Override
     public boolean existePorId(Long id) {
         return restauranteRepository.existsById(id);
+    }
+
+    @Override
+    public List<Restaurante> listarRestaurantes() {
+        return restauranteRepository.findAll().stream().map(mapper::toModel).toList();
     }
 }

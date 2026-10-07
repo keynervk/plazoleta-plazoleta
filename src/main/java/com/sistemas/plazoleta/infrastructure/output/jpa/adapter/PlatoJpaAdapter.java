@@ -6,6 +6,8 @@ import com.sistemas.plazoleta.infrastructure.output.jpa.mapper.PlatoEntityMapper
 import com.sistemas.plazoleta.infrastructure.output.jpa.repository.IPlatoRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class PlatoJpaAdapter implements IPlatoPersistencePort {
 
@@ -30,5 +32,10 @@ public class PlatoJpaAdapter implements IPlatoPersistencePort {
     @Override
     public Plato actualizarPlato(Plato plato) {
         return mapper.toModel(platoRepository.save(mapper.toEntity(plato)));
+    }
+
+    @Override
+    public List<Plato> listarPorRestaurante(Long idRestaurante) {
+        return platoRepository.findByIdRestaurante(idRestaurante).stream().map(mapper::toModel).toList();
     }
 }

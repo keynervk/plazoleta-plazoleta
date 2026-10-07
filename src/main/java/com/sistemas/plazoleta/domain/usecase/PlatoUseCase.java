@@ -7,6 +7,8 @@ import com.sistemas.plazoleta.domain.model.Plato;
 import com.sistemas.plazoleta.domain.spi.IPlatoPersistencePort;
 import com.sistemas.plazoleta.domain.spi.IRestaurantePersistencePort;
 
+import java.util.List;
+
 public class PlatoUseCase implements IPlatoServicePort {
 
     private final IPlatoPersistencePort platoPersistencePort;
@@ -80,6 +82,11 @@ public class PlatoUseCase implements IPlatoServicePort {
 
         plato.setActivo(activo);
         platoPersistencePort.actualizarPlato(plato);
+    }
+
+    @Override
+    public List<Plato> listarPorRestaurante(Long idRestaurante) {
+        return platoPersistencePort.listarPorRestaurante(idRestaurante);
     }
 
     private void validarCamposObligatorios(Plato plato) {
