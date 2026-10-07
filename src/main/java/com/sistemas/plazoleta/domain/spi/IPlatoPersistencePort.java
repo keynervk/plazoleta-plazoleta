@@ -2,6 +2,8 @@ package com.sistemas.plazoleta.domain.spi;
 
 import com.sistemas.plazoleta.domain.model.Plato;
 
+import java.util.List;
+
 public interface IPlatoPersistencePort {
 
     Plato guardarPlato(Plato plato);
@@ -9,4 +11,6 @@ public interface IPlatoPersistencePort {
     Plato buscarPorId(Long id);
 
     Plato actualizarPlato(Plato plato);
+
+    List<Plato> listarPorRestaurante(Long idRestaurante);
 }

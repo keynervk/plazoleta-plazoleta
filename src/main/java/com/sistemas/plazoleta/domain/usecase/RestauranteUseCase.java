@@ -7,6 +7,7 @@ import com.sistemas.plazoleta.domain.model.Restaurante;
 import com.sistemas.plazoleta.domain.spi.IRestaurantePersistencePort;
 import com.sistemas.plazoleta.domain.spi.IUsuarioExternoPort;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 public class RestauranteUseCase implements IRestauranteServicePort {
@@ -40,6 +41,11 @@ public class RestauranteUseCase implements IRestauranteServicePort {
         }
 
         restaurantePersistencePort.guardarRestaurante(restaurante);
+    }
+
+    @Override
+    public List<Restaurante> listarRestaurantes() {
+        return restaurantePersistencePort.listarRestaurantes();
     }
 
     private void validarCamposObligatorios(Restaurante restaurante) {
