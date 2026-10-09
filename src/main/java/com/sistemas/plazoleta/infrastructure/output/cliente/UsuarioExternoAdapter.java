@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
 public class UsuarioExternoAdapter implements IUsuarioExternoPort {
@@ -26,6 +27,18 @@ public class UsuarioExternoAdapter implements IUsuarioExternoPort {
             return Boolean.TRUE.equals(resultado);
         } catch (RestClientException e) {
             return false;
+        }
+    }
+
+    @Override
+    public Long obtenerIdUsuarioPorCorreo(String correo) {
+        try {
+            String url = UriComponentsBuilder.fromUriString(urlBaseUsuarios + "/usuarios/id-por-correo")
+                    .queryParam("correo", correo)
+                    .toUriString();
+            return restTemplate.getForObject(url, Long.class);
+        } catch (RestClientException e) {
+            return null;
         }
     }
 }
