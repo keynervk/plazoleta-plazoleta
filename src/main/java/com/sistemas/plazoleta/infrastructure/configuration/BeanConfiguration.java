@@ -21,7 +21,8 @@ public class BeanConfiguration {
 
     @Bean
     public IPlatoServicePort platoServicePort(IPlatoPersistencePort platoPersistencePort,
-                                              IRestaurantePersistencePort restaurantePersistencePort) {
-        return new PlatoUseCase(platoPersistencePort, restaurantePersistencePort);
+                                              IRestaurantePersistencePort restaurantePersistencePort,
+                                              IUsuarioExternoPort usuarioExternoPort) {
+        return new PlatoUseCase(platoPersistencePort, restaurantePersistencePort, usuarioExternoPort);
     }
 }

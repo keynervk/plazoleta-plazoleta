@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,40 +32,48 @@ public class PlatoController {
         this.platoHandler = platoHandler;
     }
 
+    private String correoUsuarioAutenticado() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
     @Operation(summary = "Crear un plato (requiere rol PROPIETARIO, dueno del restaurante)")
     @ApiResponse(responseCode = "201", description = "Plato creado")
     @ApiResponse(responseCode = "400", description = "Datos invalidos o restaurante inexistente")
+    @ApiResponse(responseCode = "403", description = "El restaurante no pertenece al usuario autenticado")
     @PostMapping
     public ResponseEntity<Void> crearPlato(@RequestBody PlatoRequestDto dto) {
-        platoHandler.crearPlato(dto);
+        platoHandler.crearPlato(dto, correoUsuarioAutenticado());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @Operation(summary = "Modificar precio y/o descripcion de un plato (requiere rol PROPIETARIO, dueno del restaurante)")
     @ApiResponse(responseCode = "200", description = "Plato modificado")
     @ApiResponse(responseCode = "400", description = "Datos invalidos")
+    @ApiResponse(responseCode = "403", description = "El restaurante no pertenece al usuario autenticado")
     @ApiResponse(responseCode = "404", description = "El plato no existe")
     @PatchMapping("/{id}")
     public ResponseEntity<Void> modificarPlato(@PathVariable Long id, @RequestBody ModificarPlatoRequestDto dto) {
-        platoHandler.modificarPlato(id, dto);
+        platoHandler.modificarPlato(id, dto, correoUsuarioAutenticado());
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Habilitar un plato (requiere rol PROPIETARIO, dueno del restaurante)")
     @ApiResponse(responseCode = "200", description = "Plato habilitado")
+    @ApiResponse(responseCode = "403", description = "El restaurante no pertenece al usuario autenticado")
     @ApiResponse(responseCode = "404", description = "El plato no existe")
     @PatchMapping("/{id}/habilitar")
     public ResponseEntity<Void> habilitarPlato(@PathVariable Long id) {
-        platoHandler.cambiarEstado(id, true);
+        platoHandler.cambiarEstado(id, true, correoUsuarioAutenticado());
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Deshabilitar un plato (requiere rol PROPIETARIO, dueno del restaurante)")
     @ApiResponse(responseCode = "200", description = "Plato deshabilitado")
+    @ApiResponse(responseCode = "403", description = "El restaurante no pertenece al usuario autenticado")
     @ApiResponse(responseCode = "404", description = "El plato no existe")
     @PatchMapping("/{id}/deshabilitar")
     public ResponseEntity<Void> deshabilitarPlato(@PathVariable Long id) {
-        platoHandler.cambiarEstado(id, false);
+        platoHandler.cambiarEstado(id, false, correoUsuarioAutenticado());
         return ResponseEntity.ok().build();
     }
 

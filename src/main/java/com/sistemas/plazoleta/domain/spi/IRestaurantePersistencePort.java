@@ -13,4 +13,6 @@ public interface IRestaurantePersistencePort {
     boolean existePorId(Long id);
 
     List<Restaurante> listarRestaurantes();
+
+    Restaurante buscarPorId(Long id);
 }

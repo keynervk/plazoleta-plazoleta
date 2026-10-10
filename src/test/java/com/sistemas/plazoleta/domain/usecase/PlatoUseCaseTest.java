@@ -1,10 +1,13 @@
 package com.sistemas.plazoleta.domain.usecase;
 
+import com.sistemas.plazoleta.domain.exception.NoAutorizadoException;
 import com.sistemas.plazoleta.domain.exception.PlatoNoEncontradoException;
 import com.sistemas.plazoleta.domain.exception.ValidacionException;
 import com.sistemas.plazoleta.domain.model.Plato;
+import com.sistemas.plazoleta.domain.model.Restaurante;
 import com.sistemas.plazoleta.domain.spi.IPlatoPersistencePort;
 import com.sistemas.plazoleta.domain.spi.IRestaurantePersistencePort;
+import com.sistemas.plazoleta.domain.spi.IUsuarioExternoPort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -13,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,11 +27,18 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PlatoUseCaseTest {
 
+    private static final String CORREO_PROPIETARIO = "juan@correo.com";
+    private static final Long ID_PROPIETARIO = 1L;
+    private static final Long ID_OTRO_USUARIO = 2L;
+
     @Mock
     private IPlatoPersistencePort platoPersistencePort;
 
     @Mock
     private IRestaurantePersistencePort restaurantePersistencePort;
+
+    @Mock
+    private IUsuarioExternoPort usuarioExternoPort;
 
     @InjectMocks
     private PlatoUseCase platoUseCase;
@@ -50,13 +61,19 @@ class PlatoUseCaseTest {
         return plato;
     }
 
+    private Restaurante restauranteDeJuan() {
+        return new Restaurante(1L, "Restaurante de Juan", "900123456", "Calle 1",
+                "+573000000000", "https://logo.com/x.png", ID_PROPIETARIO);
+    }
+
     // ---------- crearPlato ----------
 
     @Test
-    void crearPlato_conDatosValidos_quedaActivoYSeGuarda() {
-        when(restaurantePersistencePort.existePorId(1L)).thenReturn(true);
+    void crearPlato_conDatosValidosYPropietarioCorrecto_quedaActivoYSeGuarda() {
+        when(restaurantePersistencePort.buscarPorId(1L)).thenReturn(restauranteDeJuan());
+        when(usuarioExternoPort.obtenerIdUsuarioPorCorreo(CORREO_PROPIETARIO)).thenReturn(ID_PROPIETARIO);
 
-        platoUseCase.crearPlato(platoValido());
+        platoUseCase.crearPlato(platoValido(), CORREO_PROPIETARIO);
 
         ArgumentCaptor<Plato> captor = ArgumentCaptor.forClass(Plato.class);
         verify(platoPersistencePort).guardarPlato(captor.capture());
@@ -64,11 +81,21 @@ class PlatoUseCaseTest {
     }
 
     @Test
+    void crearPlato_siElRestauranteNoLePertenece_lanzaNoAutorizadoException() {
+        when(restaurantePersistencePort.buscarPorId(1L)).thenReturn(restauranteDeJuan());
+        when(usuarioExternoPort.obtenerIdUsuarioPorCorreo("otro@correo.com")).thenReturn(ID_OTRO_USUARIO);
+
+        assertThrows(NoAutorizadoException.class,
+                () -> platoUseCase.crearPlato(platoValido(), "otro@correo.com"));
+        verify(platoPersistencePort, never()).guardarPlato(any());
+    }
+
+    @Test
     void crearPlato_conPrecioCero_lanzaValidacionException() {
         Plato plato = platoValido();
         plato.setPrecio(0);
 
-        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(plato));
+        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(plato, CORREO_PROPIETARIO));
         verify(platoPersistencePort, never()).guardarPlato(any());
     }
 
@@ -77,7 +104,7 @@ class PlatoUseCaseTest {
         Plato plato = platoValido();
         plato.setPrecio(-100);
 
-        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(plato));
+        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(plato, CORREO_PROPIETARIO));
         verify(platoPersistencePort, never()).guardarPlato(any());
     }
 
@@ -86,7 +113,7 @@ class PlatoUseCaseTest {
         Plato plato = platoValido();
         plato.setNombre(" ");
 
-        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(plato));
+        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(plato, CORREO_PROPIETARIO));
         verify(platoPersistencePort, never()).guardarPlato(any());
     }
 
@@ -95,7 +122,7 @@ class PlatoUseCaseTest {
         Plato plato = platoValido();
         plato.setDescripcion(null);
 
-        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(plato));
+        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(plato, CORREO_PROPIETARIO));
         verify(platoPersistencePort, never()).guardarPlato(any());
     }
 
@@ -104,31 +131,33 @@ class PlatoUseCaseTest {
         Plato plato = platoValido();
         plato.setIdRestaurante(null);
 
-        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(plato));
+        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(plato, CORREO_PROPIETARIO));
         verify(platoPersistencePort, never()).guardarPlato(any());
     }
 
     @Test
     void crearPlato_siElRestauranteNoExiste_lanzaValidacionException() {
-        when(restaurantePersistencePort.existePorId(1L)).thenReturn(false);
+        when(restaurantePersistencePort.buscarPorId(1L)).thenReturn(null);
 
-        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(platoValido()));
+        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(platoValido(), CORREO_PROPIETARIO));
         verify(platoPersistencePort, never()).guardarPlato(any());
     }
 
     @Test
     void crearPlato_conPlatoNulo_lanzaValidacionException() {
-        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(null));
+        assertThrows(ValidacionException.class, () -> platoUseCase.crearPlato(null, CORREO_PROPIETARIO));
     }
 
     // ---------- modificarPlato ----------
 
     @Test
-    void modificarPlato_conPrecioYDescripcion_actualizaAmbos() {
+    void modificarPlato_conPropietarioCorrecto_actualizaAmbos() {
         Plato existente = platoExistente();
         when(platoPersistencePort.buscarPorId(10L)).thenReturn(existente);
+        when(restaurantePersistencePort.buscarPorId(1L)).thenReturn(restauranteDeJuan());
+        when(usuarioExternoPort.obtenerIdUsuarioPorCorreo(CORREO_PROPIETARIO)).thenReturn(ID_PROPIETARIO);
 
-        platoUseCase.modificarPlato(10L, 20000, "Nueva descripcion");
+        platoUseCase.modificarPlato(10L, 20000, "Nueva descripcion", CORREO_PROPIETARIO);
 
         ArgumentCaptor<Plato> captor = ArgumentCaptor.forClass(Plato.class);
         verify(platoPersistencePort).actualizarPlato(captor.capture());
@@ -137,11 +166,24 @@ class PlatoUseCaseTest {
     }
 
     @Test
+    void modificarPlato_siNoEsElPropietario_lanzaNoAutorizadoException() {
+        when(platoPersistencePort.buscarPorId(10L)).thenReturn(platoExistente());
+        when(restaurantePersistencePort.buscarPorId(1L)).thenReturn(restauranteDeJuan());
+        when(usuarioExternoPort.obtenerIdUsuarioPorCorreo("otro@correo.com")).thenReturn(ID_OTRO_USUARIO);
+
+        assertThrows(NoAutorizadoException.class,
+                () -> platoUseCase.modificarPlato(10L, 20000, "Algo", "otro@correo.com"));
+        verify(platoPersistencePort, never()).actualizarPlato(any());
+    }
+
+    @Test
     void modificarPlato_soloConPrecio_noTocaLaDescripcion() {
         Plato existente = platoExistente();
         when(platoPersistencePort.buscarPorId(10L)).thenReturn(existente);
+        when(restaurantePersistencePort.buscarPorId(1L)).thenReturn(restauranteDeJuan());
+        when(usuarioExternoPort.obtenerIdUsuarioPorCorreo(CORREO_PROPIETARIO)).thenReturn(ID_PROPIETARIO);
 
-        platoUseCase.modificarPlato(10L, 18000, null);
+        platoUseCase.modificarPlato(10L, 18000, null, CORREO_PROPIETARIO);
 
         ArgumentCaptor<Plato> captor = ArgumentCaptor.forClass(Plato.class);
         verify(platoPersistencePort).actualizarPlato(captor.capture());
@@ -153,8 +195,10 @@ class PlatoUseCaseTest {
     void modificarPlato_soloConDescripcion_noTocaElPrecio() {
         Plato existente = platoExistente();
         when(platoPersistencePort.buscarPorId(10L)).thenReturn(existente);
+        when(restaurantePersistencePort.buscarPorId(1L)).thenReturn(restauranteDeJuan());
+        when(usuarioExternoPort.obtenerIdUsuarioPorCorreo(CORREO_PROPIETARIO)).thenReturn(ID_PROPIETARIO);
 
-        platoUseCase.modificarPlato(10L, null, "Solo cambia la descripcion");
+        platoUseCase.modificarPlato(10L, null, "Solo cambia la descripcion", CORREO_PROPIETARIO);
 
         ArgumentCaptor<Plato> captor = ArgumentCaptor.forClass(Plato.class);
         verify(platoPersistencePort).actualizarPlato(captor.capture());
@@ -167,67 +211,86 @@ class PlatoUseCaseTest {
         when(platoPersistencePort.buscarPorId(99L)).thenReturn(null);
 
         assertThrows(PlatoNoEncontradoException.class,
-                () -> platoUseCase.modificarPlato(99L, 20000, "Algo"));
+                () -> platoUseCase.modificarPlato(99L, 20000, "Algo", CORREO_PROPIETARIO));
         verify(platoPersistencePort, never()).actualizarPlato(any());
     }
 
     @Test
     void modificarPlato_sinPrecioNiDescripcion_lanzaValidacionException() {
         when(platoPersistencePort.buscarPorId(10L)).thenReturn(platoExistente());
+        when(restaurantePersistencePort.buscarPorId(1L)).thenReturn(restauranteDeJuan());
+        when(usuarioExternoPort.obtenerIdUsuarioPorCorreo(CORREO_PROPIETARIO)).thenReturn(ID_PROPIETARIO);
 
         assertThrows(ValidacionException.class,
-                () -> platoUseCase.modificarPlato(10L, null, null));
+                () -> platoUseCase.modificarPlato(10L, null, null, CORREO_PROPIETARIO));
         verify(platoPersistencePort, never()).actualizarPlato(any());
     }
 
     @Test
     void modificarPlato_conPrecioCero_lanzaValidacionException() {
         when(platoPersistencePort.buscarPorId(10L)).thenReturn(platoExistente());
+        when(restaurantePersistencePort.buscarPorId(1L)).thenReturn(restauranteDeJuan());
+        when(usuarioExternoPort.obtenerIdUsuarioPorCorreo(CORREO_PROPIETARIO)).thenReturn(ID_PROPIETARIO);
 
         assertThrows(ValidacionException.class,
-                () -> platoUseCase.modificarPlato(10L, 0, "Algo"));
+                () -> platoUseCase.modificarPlato(10L, 0, "Algo", CORREO_PROPIETARIO));
         verify(platoPersistencePort, never()).actualizarPlato(any());
     }
 
     @Test
     void modificarPlato_sinIdPlato_lanzaValidacionException() {
         assertThrows(ValidacionException.class,
-                () -> platoUseCase.modificarPlato(null, 20000, "Algo"));
+                () -> platoUseCase.modificarPlato(null, 20000, "Algo", CORREO_PROPIETARIO));
     }
 
     // ---------- cambiarEstado ----------
 
-    @org.junit.jupiter.api.Test
-    void cambiarEstado_deshabilitarPlatoExistente_actualiza() {
+    @Test
+    void cambiarEstado_deshabilitarConPropietarioCorrecto_actualiza() {
         Plato existente = platoExistente();
         when(platoPersistencePort.buscarPorId(10L)).thenReturn(existente);
+        when(restaurantePersistencePort.buscarPorId(1L)).thenReturn(restauranteDeJuan());
+        when(usuarioExternoPort.obtenerIdUsuarioPorCorreo(CORREO_PROPIETARIO)).thenReturn(ID_PROPIETARIO);
 
-        platoUseCase.cambiarEstado(10L, false);
+        platoUseCase.cambiarEstado(10L, false, CORREO_PROPIETARIO);
 
-        org.mockito.ArgumentCaptor<Plato> captor = org.mockito.ArgumentCaptor.forClass(Plato.class);
+        ArgumentCaptor<Plato> captor = ArgumentCaptor.forClass(Plato.class);
         verify(platoPersistencePort).actualizarPlato(captor.capture());
-        org.junit.jupiter.api.Assertions.assertFalse(captor.getValue().isActivo());
+        assertFalse(captor.getValue().isActivo());
     }
 
-    @org.junit.jupiter.api.Test
-    void cambiarEstado_habilitarPlatoExistente_actualiza() {
+    @Test
+    void cambiarEstado_habilitarConPropietarioCorrecto_actualiza() {
         Plato existente = platoExistente();
         existente.setActivo(false);
         when(platoPersistencePort.buscarPorId(10L)).thenReturn(existente);
+        when(restaurantePersistencePort.buscarPorId(1L)).thenReturn(restauranteDeJuan());
+        when(usuarioExternoPort.obtenerIdUsuarioPorCorreo(CORREO_PROPIETARIO)).thenReturn(ID_PROPIETARIO);
 
-        platoUseCase.cambiarEstado(10L, true);
+        platoUseCase.cambiarEstado(10L, true, CORREO_PROPIETARIO);
 
-        org.mockito.ArgumentCaptor<Plato> captor = org.mockito.ArgumentCaptor.forClass(Plato.class);
+        ArgumentCaptor<Plato> captor = ArgumentCaptor.forClass(Plato.class);
         verify(platoPersistencePort).actualizarPlato(captor.capture());
         assertTrue(captor.getValue().isActivo());
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
+    void cambiarEstado_siNoEsElPropietario_lanzaNoAutorizadoException() {
+        when(platoPersistencePort.buscarPorId(10L)).thenReturn(platoExistente());
+        when(restaurantePersistencePort.buscarPorId(1L)).thenReturn(restauranteDeJuan());
+        when(usuarioExternoPort.obtenerIdUsuarioPorCorreo("otro@correo.com")).thenReturn(ID_OTRO_USUARIO);
+
+        assertThrows(NoAutorizadoException.class,
+                () -> platoUseCase.cambiarEstado(10L, false, "otro@correo.com"));
+        verify(platoPersistencePort, never()).actualizarPlato(any());
+    }
+
+    @Test
     void cambiarEstado_siElPlatoNoExiste_lanzaPlatoNoEncontradoException() {
         when(platoPersistencePort.buscarPorId(99L)).thenReturn(null);
 
         assertThrows(PlatoNoEncontradoException.class,
-                () -> platoUseCase.cambiarEstado(99L, false));
+                () -> platoUseCase.cambiarEstado(99L, false, CORREO_PROPIETARIO));
         verify(platoPersistencePort, never()).actualizarPlato(any());
     }
 }

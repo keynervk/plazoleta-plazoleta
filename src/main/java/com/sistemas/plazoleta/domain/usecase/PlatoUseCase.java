@@ -1,11 +1,14 @@
 package com.sistemas.plazoleta.domain.usecase;
 
 import com.sistemas.plazoleta.domain.api.IPlatoServicePort;
+import com.sistemas.plazoleta.domain.exception.NoAutorizadoException;
 import com.sistemas.plazoleta.domain.exception.PlatoNoEncontradoException;
 import com.sistemas.plazoleta.domain.exception.ValidacionException;
 import com.sistemas.plazoleta.domain.model.Plato;
+import com.sistemas.plazoleta.domain.model.Restaurante;
 import com.sistemas.plazoleta.domain.spi.IPlatoPersistencePort;
 import com.sistemas.plazoleta.domain.spi.IRestaurantePersistencePort;
+import com.sistemas.plazoleta.domain.spi.IUsuarioExternoPort;
 
 import java.util.List;
 
@@ -13,15 +16,18 @@ public class PlatoUseCase implements IPlatoServicePort {
 
     private final IPlatoPersistencePort platoPersistencePort;
     private final IRestaurantePersistencePort restaurantePersistencePort;
+    private final IUsuarioExternoPort usuarioExternoPort;
 
     public PlatoUseCase(IPlatoPersistencePort platoPersistencePort,
-                        IRestaurantePersistencePort restaurantePersistencePort) {
+                        IRestaurantePersistencePort restaurantePersistencePort,
+                        IUsuarioExternoPort usuarioExternoPort) {
         this.platoPersistencePort = platoPersistencePort;
         this.restaurantePersistencePort = restaurantePersistencePort;
+        this.usuarioExternoPort = usuarioExternoPort;
     }
 
     @Override
-    public void crearPlato(Plato plato) {
+    public void crearPlato(Plato plato, String correoUsuarioAutenticado) {
         validarCamposObligatorios(plato);
 
         if (plato.getPrecio() == null || plato.getPrecio() <= 0) {
@@ -32,16 +38,19 @@ public class PlatoUseCase implements IPlatoServicePort {
             throw new ValidacionException("El id del restaurante es obligatorio");
         }
 
-        if (!restaurantePersistencePort.existePorId(plato.getIdRestaurante())) {
+        Restaurante restaurante = restaurantePersistencePort.buscarPorId(plato.getIdRestaurante());
+        if (restaurante == null) {
             throw new ValidacionException("El restaurante indicado no existe");
         }
+
+        validarPropietario(restaurante, correoUsuarioAutenticado);
 
         plato.setActivo(true);
         platoPersistencePort.guardarPlato(plato);
     }
 
     @Override
-    public void modificarPlato(Long idPlato, Integer nuevoPrecio, String nuevaDescripcion) {
+    public void modificarPlato(Long idPlato, Integer nuevoPrecio, String nuevaDescripcion, String correoUsuarioAutenticado) {
         if (idPlato == null) {
             throw new ValidacionException("El id del plato es obligatorio");
         }
@@ -50,6 +59,9 @@ public class PlatoUseCase implements IPlatoServicePort {
         if (plato == null) {
             throw new PlatoNoEncontradoException("No existe un plato con ese id");
         }
+
+        Restaurante restaurante = restaurantePersistencePort.buscarPorId(plato.getIdRestaurante());
+        validarPropietario(restaurante, correoUsuarioAutenticado);
 
         if (nuevoPrecio == null && (nuevaDescripcion == null || nuevaDescripcion.isBlank())) {
             throw new ValidacionException("Debe enviar al menos el precio o la descripcion a modificar");
@@ -70,7 +82,7 @@ public class PlatoUseCase implements IPlatoServicePort {
     }
 
     @Override
-    public void cambiarEstado(Long idPlato, boolean activo) {
+    public void cambiarEstado(Long idPlato, boolean activo, String correoUsuarioAutenticado) {
         if (idPlato == null) {
             throw new ValidacionException("El id del plato es obligatorio");
         }
@@ -80,6 +92,9 @@ public class PlatoUseCase implements IPlatoServicePort {
             throw new PlatoNoEncontradoException("No existe un plato con ese id");
         }
 
+        Restaurante restaurante = restaurantePersistencePort.buscarPorId(plato.getIdRestaurante());
+        validarPropietario(restaurante, correoUsuarioAutenticado);
+
         plato.setActivo(activo);
         platoPersistencePort.actualizarPlato(plato);
     }
@@ -87,6 +102,14 @@ public class PlatoUseCase implements IPlatoServicePort {
     @Override
     public List<Plato> listarPorRestaurante(Long idRestaurante) {
         return platoPersistencePort.listarPorRestaurante(idRestaurante);
+    }
+
+    private void validarPropietario(Restaurante restaurante, String correoUsuarioAutenticado) {
+        Long idUsuarioAutenticado = usuarioExternoPort.obtenerIdUsuarioPorCorreo(correoUsuarioAutenticado);
+
+        if (idUsuarioAutenticado == null || !idUsuarioAutenticado.equals(restaurante.getIdPropietario())) {
+            throw new NoAutorizadoException("Este restaurante no te pertenece, no puedes administrar sus platos");
+        }
     }
 
     private void validarCamposObligatorios(Plato plato) {

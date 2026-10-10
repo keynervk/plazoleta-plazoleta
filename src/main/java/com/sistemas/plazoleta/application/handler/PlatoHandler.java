@@ -23,16 +23,16 @@ public class PlatoHandler {
         this.responseMapper = responseMapper;
     }
 
-    public void crearPlato(PlatoRequestDto dto) {
-        platoServicePort.crearPlato(mapper.toModel(dto));
+    public void crearPlato(PlatoRequestDto dto, String correoUsuarioAutenticado) {
+        platoServicePort.crearPlato(mapper.toModel(dto), correoUsuarioAutenticado);
     }
 
-    public void modificarPlato(Long idPlato, ModificarPlatoRequestDto dto) {
-        platoServicePort.modificarPlato(idPlato, dto.precio(), dto.descripcion());
+    public void modificarPlato(Long idPlato, ModificarPlatoRequestDto dto, String correoUsuarioAutenticado) {
+        platoServicePort.modificarPlato(idPlato, dto.precio(), dto.descripcion(), correoUsuarioAutenticado);
     }
 
-    public void cambiarEstado(Long idPlato, boolean activo) {
-        platoServicePort.cambiarEstado(idPlato, activo);
+    public void cambiarEstado(Long idPlato, boolean activo, String correoUsuarioAutenticado) {
+        platoServicePort.cambiarEstado(idPlato, activo, correoUsuarioAutenticado);
     }
 
     public List<PlatoResponseDto> listarPorRestaurante(Long idRestaurante) {

@@ -38,4 +38,9 @@ public class RestauranteJpaAdapter implements IRestaurantePersistencePort {
     public List<Restaurante> listarRestaurantes() {
         return restauranteRepository.findAll().stream().map(mapper::toModel).toList();
     }
+
+    @Override
+    public Restaurante buscarPorId(Long id) {
+        return restauranteRepository.findById(id).map(mapper::toModel).orElse(null);
+    }
 }
