@@ -13,6 +13,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -110,5 +113,40 @@ class RestauranteUseCaseTest {
         assertThrows(ValidacionException.class,
                 () -> restauranteUseCase.guardarRestaurante(restauranteValido()));
         verify(restaurantePersistencePort, never()).guardarRestaurante(any());
+    }
+
+    // ---------- HU 9: listarRestaurantesPaginado ----------
+
+    @Test
+    void listarRestaurantesPaginado_conParametrosValidos_devuelveLaLista() {
+        List<Restaurante> esperado = List.of(restauranteValido());
+        when(restaurantePersistencePort.listarRestaurantesPaginado(0, 10)).thenReturn(esperado);
+
+        List<Restaurante> resultado = restauranteUseCase.listarRestaurantesPaginado(0, 10);
+
+        assertEquals(esperado, resultado);
+        verify(restaurantePersistencePort).listarRestaurantesPaginado(0, 10);
+    }
+
+    @Test
+    void listarRestaurantesPaginado_conPaginaNegativa_lanzaValidacionException() {
+        assertThrows(ValidacionException.class, () -> restauranteUseCase.listarRestaurantesPaginado(-1, 10));
+        verify(restaurantePersistencePort, never()).listarRestaurantesPaginado(anyInt(), anyInt());
+    }
+
+    @Test
+    void listarRestaurantesPaginado_conTamanioCero_lanzaValidacionException() {
+        assertThrows(ValidacionException.class, () -> restauranteUseCase.listarRestaurantesPaginado(0, 0));
+        verify(restaurantePersistencePort, never()).listarRestaurantesPaginado(anyInt(), anyInt());
+    }
+
+    @Test
+    void listarRestaurantesPaginado_conTamanioNegativo_lanzaValidacionException() {
+        assertThrows(ValidacionException.class, () -> restauranteUseCase.listarRestaurantesPaginado(0, -5));
+        verify(restaurantePersistencePort, never()).listarRestaurantesPaginado(anyInt(), anyInt());
+    }
+
+    private static int anyInt() {
+        return org.mockito.ArgumentMatchers.anyInt();
     }
 }
