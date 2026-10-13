@@ -9,4 +9,6 @@ public interface IRestauranteServicePort {
     void guardarRestaurante(Restaurante restaurante);
 
     List<Restaurante> listarRestaurantes();
+
+    List<Restaurante> listarRestaurantesPaginado(int pagina, int tamanioPagina);
 }

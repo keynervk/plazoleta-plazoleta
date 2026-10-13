@@ -48,6 +48,17 @@ public class RestauranteUseCase implements IRestauranteServicePort {
         return restaurantePersistencePort.listarRestaurantes();
     }
 
+    @Override
+    public List<Restaurante> listarRestaurantesPaginado(int pagina, int tamanioPagina) {
+        if (pagina < 0) {
+            throw new ValidacionException("El numero de pagina no puede ser negativo");
+        }
+        if (tamanioPagina <= 0) {
+            throw new ValidacionException("El tamanio de la pagina debe ser mayor a 0");
+        }
+        return restaurantePersistencePort.listarRestaurantesPaginado(pagina, tamanioPagina);
+    }
+
     private void validarCamposObligatorios(Restaurante restaurante) {
         if (restaurante == null) {
             throw new ValidacionException("El restaurante es obligatorio");
