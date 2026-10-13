@@ -1,5 +1,6 @@
 package com.sistemas.plazoleta.application.handler;
 
+import com.sistemas.plazoleta.application.dto.RestauranteListadoDto;
 import com.sistemas.plazoleta.application.dto.RestauranteRequestDto;
 import com.sistemas.plazoleta.application.dto.RestauranteResponseDto;
 import com.sistemas.plazoleta.application.mapper.RestauranteRequestMapper;
@@ -30,5 +31,10 @@ public class RestauranteHandler {
 
     public List<RestauranteResponseDto> listarRestaurantes() {
         return restauranteServicePort.listarRestaurantes().stream().map(responseMapper::toDto).toList();
+    }
+
+    public List<RestauranteListadoDto> listarPaginado(int pagina, int tamanioPagina) {
+        return restauranteServicePort.listarRestaurantesPaginado(pagina, tamanioPagina)
+                .stream().map(responseMapper::toListadoDto).toList();
     }
 }
