@@ -13,4 +13,6 @@ public interface IPlatoServicePort {
     void cambiarEstado(Long idPlato, boolean activo, String correoUsuarioAutenticado);
 
     List<Plato> listarPorRestaurante(Long idRestaurante);
+
+    List<Plato> listarPlatosPaginado(Long idRestaurante, String categoria, int pagina, int tamanioPagina);
 }
