@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -55,5 +56,13 @@ public class RestauranteController {
             @Parameter(description = "Numero de pagina, empieza en 0") @RequestParam(defaultValue = "0") int pagina,
             @Parameter(description = "Cantidad de elementos por pagina") @RequestParam(defaultValue = "10") int tamanioPagina) {
         return ResponseEntity.ok(restauranteHandler.listarPaginado(pagina, tamanioPagina));
+    }
+
+    @Operation(summary = "Obtener un restaurante por id (campos completos, usado por otros microservicios)")
+    @ApiResponse(responseCode = "200", description = "Restaurante encontrado")
+    @ApiResponse(responseCode = "404", description = "El restaurante no existe")
+    @GetMapping("/{id}")
+    public ResponseEntity<RestauranteResponseDto> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(restauranteHandler.buscarPorId(id));
     }
 }

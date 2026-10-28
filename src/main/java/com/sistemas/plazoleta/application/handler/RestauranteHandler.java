@@ -37,4 +37,8 @@ public class RestauranteHandler {
         return restauranteServicePort.listarRestaurantesPaginado(pagina, tamanioPagina)
                 .stream().map(responseMapper::toListadoDto).toList();
     }
+
+    public RestauranteResponseDto buscarPorId(Long id) {
+        return responseMapper.toDto(restauranteServicePort.buscarRestaurantePorId(id));
+    }
 }

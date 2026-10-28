@@ -1,5 +1,6 @@
 package com.sistemas.plazoleta.domain.usecase;
 
+import com.sistemas.plazoleta.domain.exception.RestauranteNoEncontradoException;
 import com.sistemas.plazoleta.domain.exception.RestauranteYaExisteException;
 import com.sistemas.plazoleta.domain.exception.ValidacionException;
 import com.sistemas.plazoleta.domain.model.Restaurante;
@@ -144,6 +145,29 @@ class RestauranteUseCaseTest {
     void listarRestaurantesPaginado_conTamanioNegativo_lanzaValidacionException() {
         assertThrows(ValidacionException.class, () -> restauranteUseCase.listarRestaurantesPaginado(0, -5));
         verify(restaurantePersistencePort, never()).listarRestaurantesPaginado(anyInt(), anyInt());
+    }
+
+    // ---------- buscarRestaurantePorId ----------
+
+    @Test
+    void buscarRestaurantePorId_siExiste_loDevuelve() {
+        Restaurante esperado = restauranteValido();
+        esperado.setId(1L);
+        when(restaurantePersistencePort.buscarPorId(1L)).thenReturn(esperado);
+
+        assertEquals(esperado, restauranteUseCase.buscarRestaurantePorId(1L));
+    }
+
+    @Test
+    void buscarRestaurantePorId_siNoExiste_lanzaRestauranteNoEncontradoException() {
+        when(restaurantePersistencePort.buscarPorId(99L)).thenReturn(null);
+
+        assertThrows(RestauranteNoEncontradoException.class, () -> restauranteUseCase.buscarRestaurantePorId(99L));
+    }
+
+    @Test
+    void buscarRestaurantePorId_sinId_lanzaValidacionException() {
+        assertThrows(ValidacionException.class, () -> restauranteUseCase.buscarRestaurantePorId(null));
     }
 
     private static int anyInt() {

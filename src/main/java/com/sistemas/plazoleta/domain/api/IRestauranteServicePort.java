@@ -11,4 +11,6 @@ public interface IRestauranteServicePort {
     List<Restaurante> listarRestaurantes();
 
     List<Restaurante> listarRestaurantesPaginado(int pagina, int tamanioPagina);
+
+    Restaurante buscarRestaurantePorId(Long id);
 }

@@ -1,6 +1,7 @@
 package com.sistemas.plazoleta.domain.usecase;
 
 import com.sistemas.plazoleta.domain.api.IRestauranteServicePort;
+import com.sistemas.plazoleta.domain.exception.RestauranteNoEncontradoException;
 import com.sistemas.plazoleta.domain.exception.RestauranteYaExisteException;
 import com.sistemas.plazoleta.domain.exception.ValidacionException;
 import com.sistemas.plazoleta.domain.model.Restaurante;
@@ -57,6 +58,18 @@ public class RestauranteUseCase implements IRestauranteServicePort {
             throw new ValidacionException("El tamanio de la pagina debe ser mayor a 0");
         }
         return restaurantePersistencePort.listarRestaurantesPaginado(pagina, tamanioPagina);
+    }
+
+    @Override
+    public Restaurante buscarRestaurantePorId(Long id) {
+        if (id == null) {
+            throw new ValidacionException("El id del restaurante es obligatorio");
+        }
+        Restaurante restaurante = restaurantePersistencePort.buscarPorId(id);
+        if (restaurante == null) {
+            throw new RestauranteNoEncontradoException("No existe un restaurante con ese id");
+        }
+        return restaurante;
     }
 
     private void validarCamposObligatorios(Restaurante restaurante) {
