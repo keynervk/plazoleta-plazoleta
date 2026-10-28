@@ -38,4 +38,9 @@ public class PlatoHandler {
     public List<PlatoResponseDto> listarPorRestaurante(Long idRestaurante) {
         return platoServicePort.listarPorRestaurante(idRestaurante).stream().map(responseMapper::toDto).toList();
     }
+
+    public List<PlatoResponseDto> listarPaginado(Long idRestaurante, String categoria, int pagina, int tamanioPagina) {
+        return platoServicePort.listarPlatosPaginado(idRestaurante, categoria, pagina, tamanioPagina)
+                .stream().map(responseMapper::toDto).toList();
+    }
 }

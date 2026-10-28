@@ -29,7 +29,7 @@ public class SecurityConfiguration {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/restaurantes", "/restaurantes/paginado", "/platos")
+                        .requestMatchers(HttpMethod.GET, "/restaurantes", "/restaurantes/paginado", "/platos", "/platos/paginado")
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/restaurantes").hasRole("ADMINISTRADOR")
                         .requestMatchers(HttpMethod.POST, "/platos").hasRole("PROPIETARIO")

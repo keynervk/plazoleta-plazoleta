@@ -5,6 +5,7 @@ import com.sistemas.plazoleta.application.dto.PlatoRequestDto;
 import com.sistemas.plazoleta.application.dto.PlatoResponseDto;
 import com.sistemas.plazoleta.application.handler.PlatoHandler;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
@@ -82,5 +83,19 @@ public class PlatoController {
     @GetMapping
     public ResponseEntity<List<PlatoResponseDto>> listarPorRestaurante(@RequestParam Long idRestaurante) {
         return ResponseEntity.ok(platoHandler.listarPorRestaurante(idRestaurante));
+    }
+
+    @Operation(summary = "HU 10: Listar el menu de un restaurante paginado, opcionalmente filtrado por categoria "
+            + "(solo platos activos, en orden alfabetico)")
+    @ApiResponse(responseCode = "200", description = "Pagina de platos")
+    @ApiResponse(responseCode = "400", description = "Parametros de paginacion invalidos")
+    @ApiResponse(responseCode = "404", description = "El restaurante no existe")
+    @GetMapping("/paginado")
+    public ResponseEntity<List<PlatoResponseDto>> listarPaginado(
+            @Parameter(description = "Id del restaurante") @RequestParam Long idRestaurante,
+            @Parameter(description = "Categoria a filtrar (opcional)") @RequestParam(required = false) String categoria,
+            @Parameter(description = "Numero de pagina, empieza en 0") @RequestParam(defaultValue = "0") int pagina,
+            @Parameter(description = "Cantidad de elementos por pagina") @RequestParam(defaultValue = "10") int tamanioPagina) {
+        return ResponseEntity.ok(platoHandler.listarPaginado(idRestaurante, categoria, pagina, tamanioPagina));
     }
 }

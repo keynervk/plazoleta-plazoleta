@@ -3,6 +3,7 @@ package com.sistemas.plazoleta.domain.usecase;
 import com.sistemas.plazoleta.domain.api.IPlatoServicePort;
 import com.sistemas.plazoleta.domain.exception.NoAutorizadoException;
 import com.sistemas.plazoleta.domain.exception.PlatoNoEncontradoException;
+import com.sistemas.plazoleta.domain.exception.RestauranteNoEncontradoException;
 import com.sistemas.plazoleta.domain.exception.ValidacionException;
 import com.sistemas.plazoleta.domain.model.Plato;
 import com.sistemas.plazoleta.domain.model.Restaurante;
@@ -102,6 +103,25 @@ public class PlatoUseCase implements IPlatoServicePort {
     @Override
     public List<Plato> listarPorRestaurante(Long idRestaurante) {
         return platoPersistencePort.listarPorRestaurante(idRestaurante);
+    }
+
+    @Override
+    public List<Plato> listarPlatosPaginado(Long idRestaurante, String categoria, int pagina, int tamanioPagina) {
+        if (idRestaurante == null) {
+            throw new ValidacionException("El id del restaurante es obligatorio");
+        }
+        if (pagina < 0) {
+            throw new ValidacionException("El numero de pagina no puede ser negativo");
+        }
+        if (tamanioPagina <= 0) {
+            throw new ValidacionException("El tamanio de la pagina debe ser mayor a 0");
+        }
+        if (!restaurantePersistencePort.existePorId(idRestaurante)) {
+            throw new RestauranteNoEncontradoException("No existe un restaurante con ese id");
+        }
+
+        String categoriaFiltro = estaVacio(categoria) ? null : categoria.trim();
+        return platoPersistencePort.listarActivosPorRestaurantePaginado(idRestaurante, categoriaFiltro, pagina, tamanioPagina);
     }
 
     private void validarPropietario(Restaurante restaurante, String correoUsuarioAutenticado) {

@@ -2,6 +2,7 @@ package com.sistemas.plazoleta.domain.usecase;
 
 import com.sistemas.plazoleta.domain.exception.NoAutorizadoException;
 import com.sistemas.plazoleta.domain.exception.PlatoNoEncontradoException;
+import com.sistemas.plazoleta.domain.exception.RestauranteNoEncontradoException;
 import com.sistemas.plazoleta.domain.exception.ValidacionException;
 import com.sistemas.plazoleta.domain.model.Plato;
 import com.sistemas.plazoleta.domain.model.Restaurante;
@@ -15,11 +16,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -292,5 +298,63 @@ class PlatoUseCaseTest {
         assertThrows(PlatoNoEncontradoException.class,
                 () -> platoUseCase.cambiarEstado(99L, false, CORREO_PROPIETARIO));
         verify(platoPersistencePort, never()).actualizarPlato(any());
+    }
+
+    // ---------- HU 10: listarPlatosPaginado ----------
+
+    @Test
+    void listarPlatosPaginado_sinCategoria_devuelveLaPaginaSinFiltrar() {
+        List<Plato> esperado = List.of(platoExistente());
+        when(restaurantePersistencePort.existePorId(1L)).thenReturn(true);
+        when(platoPersistencePort.listarActivosPorRestaurantePaginado(1L, null, 0, 10)).thenReturn(esperado);
+
+        List<Plato> resultado = platoUseCase.listarPlatosPaginado(1L, null, 0, 10);
+
+        assertEquals(esperado, resultado);
+    }
+
+    @Test
+    void listarPlatosPaginado_conCategoria_filtraPorEsaCategoria() {
+        List<Plato> esperado = List.of(platoExistente());
+        when(restaurantePersistencePort.existePorId(1L)).thenReturn(true);
+        when(platoPersistencePort.listarActivosPorRestaurantePaginado(1L, "Comida rapida", 1, 5)).thenReturn(esperado);
+
+        List<Plato> resultado = platoUseCase.listarPlatosPaginado(1L, "  Comida rapida ", 1, 5);
+
+        assertEquals(esperado, resultado);
+    }
+
+    @Test
+    void listarPlatosPaginado_conCategoriaEnBlanco_noFiltra() {
+        when(restaurantePersistencePort.existePorId(1L)).thenReturn(true);
+
+        platoUseCase.listarPlatosPaginado(1L, "   ", 0, 10);
+
+        verify(platoPersistencePort).listarActivosPorRestaurantePaginado(1L, null, 0, 10);
+    }
+
+    @Test
+    void listarPlatosPaginado_siElRestauranteNoExiste_lanzaRestauranteNoEncontradoException() {
+        when(restaurantePersistencePort.existePorId(99L)).thenReturn(false);
+
+        assertThrows(RestauranteNoEncontradoException.class,
+                () -> platoUseCase.listarPlatosPaginado(99L, null, 0, 10));
+        verify(platoPersistencePort, never()).listarActivosPorRestaurantePaginado(anyLong(), any(), anyInt(), anyInt());
+    }
+
+    @Test
+    void listarPlatosPaginado_sinIdRestaurante_lanzaValidacionException() {
+        assertThrows(ValidacionException.class, () -> platoUseCase.listarPlatosPaginado(null, null, 0, 10));
+    }
+
+    @Test
+    void listarPlatosPaginado_conPaginaNegativa_lanzaValidacionException() {
+        assertThrows(ValidacionException.class, () -> platoUseCase.listarPlatosPaginado(1L, null, -1, 10));
+        verify(platoPersistencePort, never()).listarActivosPorRestaurantePaginado(anyLong(), anyString(), anyInt(), anyInt());
+    }
+
+    @Test
+    void listarPlatosPaginado_conTamanioCero_lanzaValidacionException() {
+        assertThrows(ValidacionException.class, () -> platoUseCase.listarPlatosPaginado(1L, null, 0, 0));
     }
 }

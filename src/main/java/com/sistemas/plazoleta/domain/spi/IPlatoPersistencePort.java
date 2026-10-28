@@ -13,4 +13,6 @@ public interface IPlatoPersistencePort {
     Plato actualizarPlato(Plato plato);
 
     List<Plato> listarPorRestaurante(Long idRestaurante);
+
+    List<Plato> listarActivosPorRestaurantePaginado(Long idRestaurante, String categoria, int pagina, int tamanioPagina);
 }
